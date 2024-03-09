@@ -1,20 +1,32 @@
 class Cleaner:
     cur_x = 0
     cur_y = 0
-    right = True
-    down = True
+    square = None
 
     def __init__(self):
         pass
 
-    def visit(self, square):
+    def accept(self, square):
         self.cur_x = square.pos_x
         self.cur_y = square.pos_y
+        self.square = square
 
-        # clean
-        if square.dirty:
-            square.dirty = False
+    def remove_square(self):
+        self.square = None
 
-    def print(self):
-        print(f'x: {self.cur_x}, y: {self.cur_y}')
-        print(f'right: {self.right}, down: {self.down}')
+    def get_perception(self):
+        if not self.square:
+            return 'nothing'
+
+        if self.square.dirty:
+            if self.square.pos_y == 0:
+                return 'left_dirty'
+            if self.square.pos_x == 0:
+                return 'right_dirty'
+        else:
+            if self.square.pos_y == 0:
+                return 'left_clean'
+            if self.square.pos_x == 0:
+                return 'right_clean'
+
+        return 'nothing'

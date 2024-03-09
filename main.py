@@ -1,3 +1,6 @@
+# status: 'left_dirty', 'right_dirty', 'left_clean', 'right_clean'
+# perceptions: 'left_dirty', 'right_dirty', 'left_clean', 'right_clean', 'nothing'
+
 import threading
 import time
 from random import randrange
@@ -5,100 +8,97 @@ from random import randrange
 from model.board import Board
 from model.cleaner import Cleaner
 
-board = Board(1, 2)
-board.print_board()
+rules = {
+    'left_dirty': 'clean_left',
+    'right_dirty': 'clean_right',
+    'left_clean': 'move_to_right',
+    'right_clean': 'move_to_left',
+    'nothing': 'do_nothing'
+}
+
+actions = {
+    'clean_left': 'cleaning left',
+    'clean_right': 'cleaning right',
+    'move_to_left': 'moving to the left',
+    'move_to_right': 'moving to the right',
+    'do_nothing': 'resting...'
+}
+
+model = [
+    ['left_dirty', 'clean_left', 'left_clean', 'move_to_right'],
+    ['left_dirty', 'clean_left', 'left_dirty', 'clean_left'],
+    ['right_dirty', 'clean_right', 'right_clean', 'move_to_left'],
+    ['right_dirty', 'clean_right', 'right_dirty', 'clean_right'],
+    ['left_clean', 'move_to_right', 'right_dirty', 'clean_right'],
+    ['left_clean', 'move_to_right', 'right_clean', 'do_nothing'],
+    ['right_clean', 'move_to_left', 'left_dirty', 'clean_left'],
+    ['right_clean', 'move_to_left', 'left_clean', 'do_nothing'],
+    ['left_clean', 'move_to_right', 'nothing', 'do_nothing'],
+    ['right_clean', 'move_to_left', 'nothing', 'do_nothing'],
+    ['left_clean', 'move_to_right', 'left_clean', 'move_to_right'],
+    ['right_clean', 'move_to_left', 'right_clean', 'move_to_left'],
+    ['right_clean', 'do_nothing', 'right_clean', 'do_nothing'],
+    ['left_clean', 'do_nothing', 'left_clean', 'do_nothing'],
+    ['right_clean', 'do_nothing', 'right_dirty', 'clean_right'],
+    ['left_clean', 'do_nothing', 'left_dirty', 'clean_left'],
+]
+
 cleaner = Cleaner()
+board = Board(1, 2, cleaner)
+
+cur_status = cleaner.get_perception()
+cur_action = rules[cur_status]
 
 
-def game(cleaner1, seconds):
-    # print(end='\n')
+def find_in_model(status, action, perception):
+    print(f'find_in_model: {status}, action: {action}, perception: {perception}')
+
+    for tmp in model:
+        if tmp[0] == status and tmp[1] == action and tmp[2] == perception:
+            return {'perception': tmp[2], 'action': tmp[3]}
+
+    return {'perception': '', 'action': ''}
+
+
+def game(seconds):
+    global cur_action, cur_status
     while True:
-        cur_x, cur_y = cleaner1.cur_x, cleaner1.cur_y
-        right, down = cleaner1.right, cleaner1.down
+        cur_perception = cleaner.get_perception()
+        print(cur_perception)
 
-        # print(f'x: {cur_x}, y: {cur_y}')
-        # print(f'right: {right}, down: {down}')
-        board.board[cur_x][cur_y].set_cleaner(cleaner1)
-        # board.print_board()
+        status = find_in_model(cur_status, cur_action, cur_perception)
+        cur_status = status['perception']
+        cur_action = status['action']
 
-        # TODO: move
-        if right and len(board.board) - 1 > cur_x:
-            cleaner1.cur_x = cur_x + 1
-            cleaner1.cur_y = cur_y
-        elif not right and cur_x > 0:
-            cleaner1.cur_x = cur_x - 1
-            cleaner1.cur_y = cur_y
-        elif right and len(board.board) - 1 == cur_x:
-            if len(board.board[cur_x]) - 1 == cur_y:
-                cleaner1.cur_x = cur_x - 1
-                cleaner1.cur_y = cur_y
-                cleaner1.right = not right
-                cleaner1.down = not down
-            else:
-                cleaner1.cur_x = cur_x
-                cleaner1.right = not right
-                if down:
-                    cleaner1.cur_y = cur_y + 1
-                elif not down and cur_y > 0:
-                    cleaner1.cur_y = cur_y - 1
-                elif cur_y == 0 or len(board.board[cur_x]) - 1 == cur_y:
-                    cleaner1.down = not down
-        elif not right and cur_x == 0:
-            if len(board.board[cur_x]) - 1 == cur_y and cur_y > 0:
-                cleaner1.cur_x = cur_x
-                cleaner1.cur_y = cur_y - 1
-                cleaner1.right = not right
-            elif down:
-                cleaner1.cur_x = cur_x
-                cleaner1.cur_y = cur_y + 1
-                cleaner1.right = not right
-            elif not down:
-                cleaner1.cur_x = cur_x + 1
-                cleaner1.cur_y = cur_y
-                cleaner1.down = not down
-                cleaner1.right = not right
-        elif down and len(board.board[cur_x]) - 1 > cur_y:
-            cleaner1.cur_x = cur_x
-            cleaner1.cur_y = cur_y + 1
-        elif not down and cur_y > 0:
-            cleaner1.cur_x = cur_x
-            cleaner1.cur_y = cur_y - 1
-        elif down and len(board.board[cur_x]) - 1 == cur_y:
-            # TODO: update here
-            cleaner1.cur_y = cur_y
-            cleaner1.cur_x = cur_x + 1
-            cleaner1.down = not down
-        elif not down and cur_y == 0:
-            # TODO: update here
-            cleaner1.cur_y = cur_y
-            cleaner1.cur_x = cur_x + 1
-            cleaner1.down = not down
+        print(status)
+        if cur_status != '' and cur_action != '':
+            txt_action = actions[cur_action]
+            print(txt_action)
         else:
-            print('else')
-
+            print('unknown action')
         time.sleep(seconds)
-        board.board[cur_x][cur_y].remove_cleaner()
+        board.set_action(cur_action)
 
 
-def dirty_board(board1, seconds):
+def dirty_board(seconds):
     while True:
-        i, j = randrange(board1.total_x), randrange(board1.total_y)
-        square = board1.board[i][j]
-        if not square.dirty and square.cleaner is None:
-            board1.board[i][j].dirty = not board1.board[i][j].dirty
+        i, j = randrange(board.total_x), randrange(board.total_y)
+        square = board.board[i][j]
+        if not square.dirty:
+            board.board[i][j].dirty = not board.board[i][j].dirty
         time.sleep(seconds)
 
 
-def print_board(board1, seconds):
+def print_board(seconds):
     while True:
-        board1.print_board()
+        board.print_board()
         time.sleep(seconds)
 
 
-print_thread = threading.Thread(target=print_board, args=(board, 2,))
-dirty_thread = threading.Thread(target=dirty_board, args=(board, 2,))
-game_thread = threading.Thread(target=game, args=(cleaner, 4,))
+game_thread = threading.Thread(target=game, args=(2,))
+painting_thread = threading.Thread(target=print_board, args=(2,))
+dirty_thread = threading.Thread(target=dirty_board, args=(2,))
 
-print_thread.start()
 game_thread.start()
+painting_thread.start()
 dirty_thread.start()

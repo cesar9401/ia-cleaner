@@ -5,14 +5,17 @@ class Square:
     cleaner = None
 
     def __init__(self, pos_x, pos_y, dirty):
-        self.posX = pos_x
-        self.posY = pos_y
+        self.pos_x = pos_x
+        self.pos_y = pos_y
         self.dirty = dirty
 
     def set_cleaner(self, cleaner):
         self.cleaner = cleaner
-        cleaner.visit(self)
+        cleaner.accept(self)
 
     def remove_cleaner(self):
         if self.cleaner is not None:
+            # remove square
+            self.cleaner.remove_square()
+            # remove cleaner
             self.cleaner = None
